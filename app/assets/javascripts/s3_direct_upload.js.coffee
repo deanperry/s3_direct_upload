@@ -33,12 +33,23 @@ $.fn.S3Uploader = (options) ->
       form.submit() for form in forms_for_submit
       false
 
+  # http://byronsalau.com/blog/how-to-create-a-guid-uuid-in-javascript/
+  createGuid = ->
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace /[xy]/g, (c) ->
+      r = Math.random() * 16 | 0
+      v = if c == 'x' then r else r & 0x3 | 0x8
+      v.toString 16
+
+
   setUploadForm = ->
     $uploadForm.fileupload
 
       add: (e, data) ->
         file = data.files[0]
         file.unique_id = Math.random().toString(36).substr(2,16)
+        file.uuid = createGuid()
+
+
 
         unless settings.before_add and not settings.before_add(file)
           current_files.push data
@@ -116,6 +127,7 @@ $.fn.S3Uploader = (options) ->
         key = $uploadForm.data("key")
           .replace('{timestamp}', new Date().getTime())
           .replace('{unique_id}', @files[0].unique_id)
+          .replace('{uuid}', @files[0].uuid)
           .replace('{extension}', @files[0].name.split('.').pop())
 
         # substitute upload timestamp and unique_id into key
@@ -146,6 +158,7 @@ $.fn.S3Uploader = (options) ->
     content.lastModifiedDate = file.lastModifiedDate if 'lastModifiedDate' of file
     content.filetype         = file.type if 'type' of file
     content.unique_id        = file.unique_id if 'unique_id' of file
+    content.uuid             = file.uuid if 'uuid' of file
     content.relativePath     = build_relativePath(file) if has_relativePath(file)
     content = $.extend content, settings.additional_data if settings.additional_data
     content
